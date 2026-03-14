@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PersonalizedJira.Application\PersonalizedJira.Application.csproj" />
+    <ProjectReference Include="..\PersonalizedJira.Domain\PersonalizedJira.Domain.csproj" />
+  </ItemGroup>
+</Project>

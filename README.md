@@ -96,3 +96,25 @@ PersonalizedJira/
 - `infra/`: Container and cluster deployment assets.
 - `docs/`: Architecture and API documentation.
 - `scripts/`: Automation scripts for local/dev/prod flows.
+
+## Quick Start
+
+1. Start backend (Terminal 1):
+
+```powershell
+Set-Location .\backend
+dotnet run --project .\src\PersonalizedJira.Api\PersonalizedJira.Api.csproj --urls http://localhost:5000
+```
+
+2. Start frontend (Terminal 2):
+
+```powershell
+Set-Location .\frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+3. Open:
+
+- Frontend: http://localhost:5173
+- Backend Swagger: http://localhost:5000/swagger
