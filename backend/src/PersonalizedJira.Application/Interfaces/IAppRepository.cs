@@ -4,7 +4,9 @@ namespace PersonalizedJira.Application.Interfaces;
 
 public interface IAppRepository
 {
+    AuthResponse Register(LoginRequest request);
     AuthResponse Login(LoginRequest request);
+    bool IsTokenValid(string token);
     IReadOnlyList<WorkspaceDto> GetWorkspaces();
     IReadOnlyList<TaskDto> GetTasksByWorkspace(Guid workspaceId);
     IReadOnlyList<TaskDto> SearchTasks(string query);

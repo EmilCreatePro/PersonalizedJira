@@ -11,12 +11,36 @@ public sealed class InMemoryAppRepositoryTests
     [Fact]
     public void Login_UsesEmailPrefixAsDisplayName()
     {
-        var request = new LoginRequest("emil@example.com", "secret");
+        var request = new LoginRequest("emil@example.com", "123456");
 
         var response = _repository.Login(request);
 
-        Assert.Equal("dev-token-123", response.Token);
+        Assert.StartsWith("dev-", response.Token);
         Assert.Equal("emil", response.DisplayName);
+        Assert.True(_repository.IsTokenValid(response.Token));
+    }
+
+    [Fact]
+    public void Login_InvalidPassword_ThrowsUnauthorizedAccessException()
+    {
+        Assert.Throws<UnauthorizedAccessException>(() => _repository.Login(new LoginRequest("emil@example.com", "wrong")));
+    }
+
+    [Fact]
+    public void Register_CreatesUser_AndAllowsLogin()
+    {
+        var registered = _repository.Register(new LoginRequest("new.user@example.com", "abc123"));
+        var loggedIn = _repository.Login(new LoginRequest("new.user@example.com", "abc123"));
+
+        Assert.StartsWith("dev-", registered.Token);
+        Assert.Equal("new.user", registered.DisplayName);
+        Assert.StartsWith("dev-", loggedIn.Token);
+    }
+
+    [Fact]
+    public void Register_ExistingUser_ThrowsInvalidOperationException()
+    {
+        Assert.Throws<InvalidOperationException>(() => _repository.Register(new LoginRequest("emil@example.com", "123456")));
     }
 
     [Fact]

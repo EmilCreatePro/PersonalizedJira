@@ -26,6 +26,35 @@ builder.Services.AddSingleton<IAppRepository, InMemoryAppRepository>();
 
 var app = builder.Build();
 
+RouteHandlerBuilder RequireAuth(RouteHandlerBuilder builder)
+{
+    return builder.AddEndpointFilter(async (context, next) =>
+    {
+        var request = context.HttpContext.Request;
+        var header = request.Headers.Authorization.ToString();
+        const string bearerPrefix = "Bearer ";
+
+        if (!header.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.Unauthorized();
+        }
+
+        var token = header[bearerPrefix.Length..].Trim();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Results.Unauthorized();
+        }
+
+        var repository = context.HttpContext.RequestServices.GetRequiredService<IAppRepository>();
+        if (!repository.IsTokenValid(token))
+        {
+            return Results.Unauthorized();
+        }
+
+        return await next(context);
+    });
+}
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -40,31 +69,56 @@ app.MapPost("/api/auth/login", (LoginRequest request, IAppRepository repository)
         return Results.BadRequest(new { message = "Email and password are required." });
     }
 
-    var auth = repository.Login(request);
-    return Results.Ok(auth);
+    try
+    {
+        var auth = repository.Login(request);
+        return Results.Ok(auth);
+    }
+    catch (UnauthorizedAccessException)
+    {
+        return Results.Unauthorized();
+    }
 });
 
-app.MapGet("/api/workspaces", (IAppRepository repository) => Results.Ok(repository.GetWorkspaces()));
+app.MapPost("/api/auth/register", (LoginRequest request, IAppRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+    {
+        return Results.BadRequest(new { message = "Email and password are required." });
+    }
 
-app.MapGet("/api/boards/{workspaceId:guid}", (Guid workspaceId, IAppRepository repository) =>
+    try
+    {
+        var auth = repository.Register(request);
+        return Results.Ok(auth);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Conflict(new { message = ex.Message });
+    }
+});
+
+RequireAuth(app.MapGet("/api/workspaces", (IAppRepository repository) => Results.Ok(repository.GetWorkspaces())));
+
+RequireAuth(app.MapGet("/api/boards/{workspaceId:guid}", (Guid workspaceId, IAppRepository repository) =>
 {
     var tasks = repository.GetTasksByWorkspace(workspaceId);
     return Results.Ok(tasks);
-});
+}));
 
-app.MapGet("/api/search", (string? q, IAppRepository repository) =>
+RequireAuth(app.MapGet("/api/search", (string? q, IAppRepository repository) =>
 {
     var tasks = repository.SearchTasks(q ?? string.Empty);
     return Results.Ok(new SearchResponse(q ?? string.Empty, tasks));
-});
+}));
 
-app.MapGet("/api/tasks/filter", (string? assignee, string? label, IAppRepository repository) =>
+RequireAuth(app.MapGet("/api/tasks/filter", (string? assignee, string? label, IAppRepository repository) =>
 {
     var tasks = repository.FilterTasks(assignee, label);
     return Results.Ok(tasks);
-});
+}));
 
-app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceId, CreateTaskRequest request, IAppRepository repository) =>
+RequireAuth(app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceId, CreateTaskRequest request, IAppRepository repository) =>
 {
     if (string.IsNullOrWhiteSpace(request.Title)
         || string.IsNullOrWhiteSpace(request.Description)
@@ -77,9 +131,9 @@ app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceId, CreateTas
 
     var created = repository.CreateTask(workspaceId, request);
     return Results.Ok(created);
-});
+}));
 
-app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest request, IAppRepository repository, IHubContext<UpdatesHub> hubContext) =>
+RequireAuth(app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest request, IAppRepository repository, IHubContext<UpdatesHub> hubContext) =>
 {
     if (string.IsNullOrWhiteSpace(request.Status))
     {
@@ -100,9 +154,9 @@ app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest
     });
 
     return Results.Ok(updated);
-});
+}));
 
-app.MapDelete("/api/tasks/{taskId:guid}", (Guid taskId, IAppRepository repository) =>
+RequireAuth(app.MapDelete("/api/tasks/{taskId:guid}", (Guid taskId, IAppRepository repository) =>
 {
     var deleted = repository.DeleteTask(taskId);
     if (!deleted)
@@ -111,7 +165,7 @@ app.MapDelete("/api/tasks/{taskId:guid}", (Guid taskId, IAppRepository repositor
     }
 
     return Results.NoContent();
-});
+}));
 
 app.MapHub<UpdatesHub>("/hubs/updates");
 

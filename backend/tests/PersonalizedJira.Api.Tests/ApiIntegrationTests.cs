@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -41,13 +42,38 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = json.RootElement;
 
-        Assert.Equal("dev-token-123", root.GetProperty("token").GetString());
+        var token = root.GetProperty("token").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(token));
+        Assert.StartsWith("dev-", token);
         Assert.Equal("emil", root.GetProperty("displayName").GetString());
+    }
+
+    [Fact]
+    public async Task Register_ReturnsConflict_WhenEmailAlreadyExists()
+    {
+        var response = await _client.PostAsJsonAsync("/api/auth/register", new
+        {
+            Email = "emil@example.com",
+            Password = "123456"
+        });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProtectedEndpoint_ReturnsUnauthorized_WithoutToken()
+    {
+        _client.DefaultRequestHeaders.Authorization = null;
+
+        var response = await _client.GetAsync("/api/workspaces");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
     public async Task Search_ReturnsExpectedShape_WithQueryAndTasks()
     {
+        await AuthenticateAsSeedUserAsync();
         var response = await _client.GetAsync("/api/search?q=auth");
 
         response.EnsureSuccessStatusCode();
@@ -65,6 +91,7 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task MoveTask_UpdatesStatus_WhenTaskExists()
     {
+        await AuthenticateAsSeedUserAsync();
         var existingTaskId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
 
         var response = await _client.PostAsJsonAsync($"/api/tasks/{existingTaskId}/move", new
@@ -84,6 +111,7 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task MoveTask_ReturnsNotFound_WhenTaskDoesNotExist()
     {
+        await AuthenticateAsSeedUserAsync();
         var response = await _client.PostAsJsonAsync($"/api/tasks/{Guid.NewGuid()}/move", new
         {
             Status = "done"
@@ -95,6 +123,7 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task CreateTask_ReturnsSuccessForValidPayload_AndBadRequestForInvalidPayload()
     {
+        await AuthenticateAsSeedUserAsync();
         var workspaceId = "11111111-1111-1111-1111-111111111111";
 
         var successResponse = await _client.PostAsJsonAsync($"/api/boards/{workspaceId}/tasks", new
@@ -133,6 +162,7 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
     [Fact]
     public async Task DeleteTask_ReturnsNoContentForExistingTask_AndNotFoundForMissingTask()
     {
+        await AuthenticateAsSeedUserAsync();
         var workspaceId = "11111111-1111-1111-1111-111111111111";
 
         var createResponse = await _client.PostAsJsonAsync($"/api/boards/{workspaceId}/tasks", new
@@ -156,5 +186,22 @@ public sealed class ApiIntegrationTests : IClassFixture<WebApplicationFactory<Pr
 
         var deleteMissingResponse = await _client.DeleteAsync($"/api/tasks/{createdId}");
         Assert.Equal(HttpStatusCode.NotFound, deleteMissingResponse.StatusCode);
+    }
+
+    private async Task AuthenticateAsSeedUserAsync()
+    {
+        var response = await _client.PostAsJsonAsync("/api/auth/login", new
+        {
+            Email = "emil@example.com",
+            Password = "123456"
+        });
+
+        response.EnsureSuccessStatusCode();
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var token = json.RootElement.GetProperty("token").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(token));
+
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 }

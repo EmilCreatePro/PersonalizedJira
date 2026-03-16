@@ -1,10 +1,10 @@
 import { FormEvent, useState } from "react";
 
 type Props = {
-  onLogin: (email: string, password: string) => Promise<void>;
+  onAuthenticate: (mode: "login" | "register", email: string, password: string) => Promise<void>;
 };
 
-export function AuthPanel({ onLogin }: Props) {
+export function AuthPanel({ onAuthenticate }: Props) {
   const [email, setEmail] = useState("emil@demo.dev");
   const [password, setPassword] = useState("password123");
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -17,7 +17,7 @@ export function AuthPanel({ onLogin }: Props) {
     setError(null);
 
     try {
-      await onLogin(email, password);
+      await onAuthenticate(mode, email, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Auth failed.");
     } finally {

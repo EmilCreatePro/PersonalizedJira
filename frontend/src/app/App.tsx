@@ -12,6 +12,8 @@ import {
   getWorkspaces,
   login,
   moveTask,
+  register,
+  setAuthToken,
   searchTasks
 } from "../services/api/client";
 import { connectUpdatesHub } from "../services/realtime/updatesClient";
@@ -72,10 +74,13 @@ export default function App() {
     [tasks, selectedWorkspace]
   );
 
-  const handleLogin = async (email: string, password: string) => {
-    const auth = await login(email, password);
+  const handleAuthenticate = async (mode: "login" | "register", email: string, password: string) => {
+    const auth = mode === "register"
+      ? await register(email, password)
+      : await login(email, password);
     setDisplayName(auth.displayName);
     setToken(auth.token);
+    setAuthToken(auth.token);
 
     const loadedWorkspaces = await getWorkspaces();
     setWorkspaces(loadedWorkspaces);
@@ -135,6 +140,7 @@ export default function App() {
   const handleLogout = () => {
     setDisplayName(null);
     setToken(null);
+    setAuthToken(null);
     setWorkspaces([]);
     setSelectedWorkspace(null);
     setTasks([]);
@@ -159,7 +165,7 @@ export default function App() {
         </div>
       </header>
 
-      {!token ? <AuthPanel onLogin={handleLogin} /> : null}
+      {!token ? <AuthPanel onAuthenticate={handleAuthenticate} /> : null}
 
       <DashboardPage
         workspaces={workspaces}
