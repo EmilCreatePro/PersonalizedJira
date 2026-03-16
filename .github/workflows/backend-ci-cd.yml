@@ -2,16 +2,20 @@ name: Backend CI/CD
 
 on:
   push:
+    branches: [main]
     paths:
       - "backend/**"
+      - "PersonalizedJira.sln"
       - ".github/workflows/backend-ci-cd.yml"
   pull_request:
+    branches: [main]
     paths:
       - "backend/**"
+      - "PersonalizedJira.sln"
       - ".github/workflows/backend-ci-cd.yml"
 
 jobs:
-  build-test-deploy:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,14 +28,10 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore
-        run: dotnet restore backend
+        run: dotnet restore PersonalizedJira.sln
 
       - name: Build
-        run: dotnet build backend --configuration Release --no-restore
+        run: dotnet build PersonalizedJira.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test backend --configuration Release --no-build
-
-      - name: Deploy
-        if: github.ref == 'refs/heads/main'
-        run: echo "Add backend deploy command here"
+        run: dotnet test PersonalizedJira.sln --configuration Release --no-build --verbosity normal
