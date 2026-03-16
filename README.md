@@ -107,13 +107,13 @@ For `main`, require status checks before merge:
 - `Backend CI/CD / build-test`
 - `Frontend CI/CD / build`
 
-## Interview Demo Flow (5 minutes)
+## Demo Flow for Inteview (Notes For Myself)
 
-1. Login with any email/password.
-2. Show workspaces and board tasks.
-3. Search tasks (`/api/search`).
-4. Filter tasks by assignee/label.
-5. Move a task and mention SignalR event emission.
+1. Register a new user (or login with seeded user emil@example.com / 123456).
+2. Show authenticated access to workspaces and board tasks.
+3. Search and filter tasks.
+4. Move a task and mention SignalR event emission.
+5. Logout and show protected endpoints are no longer accessible.
 6. Show tests and CI passing.
 
 ## Project Structure
