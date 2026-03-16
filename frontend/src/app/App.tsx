@@ -91,8 +91,9 @@ export default function App() {
     setTasks(await filterTasks(assignee.trim(), label.trim()));
   };
 
-  const handleMoveTask = async (task: TaskItem) => {
-    const next = task.status === "todo" ? "in-progress" : task.status === "in-progress" ? "done" : "todo";
+  const handleMoveTask = async (task: TaskItem, targetStatus?: string) => {
+    const next = targetStatus
+      ?? (task.status === "todo" ? "in-progress" : task.status === "in-progress" ? "done" : "todo");
     const updated = await moveTask(task.id, next);
 
     setTasks((current) => current.map((item) => (item.id === updated.id ? updated : item)));
