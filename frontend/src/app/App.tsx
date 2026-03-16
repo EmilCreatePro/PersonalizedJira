@@ -132,6 +132,15 @@ export default function App() {
     setTasks((current) => current.filter((task) => task.id !== taskId));
   };
 
+  const handleLogout = () => {
+    setDisplayName(null);
+    setToken(null);
+    setWorkspaces([]);
+    setSelectedWorkspace(null);
+    setTasks([]);
+    setFeed([]);
+  };
+
   return (
     <main className="app-shell">
       <header className="hero">
@@ -144,10 +153,13 @@ export default function App() {
           <button type="button" disabled={!pingRealtime} onClick={() => pingRealtime?.()}>
             Ping Realtime
           </button>
+          <button type="button" disabled={!token} onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </header>
 
-      <AuthPanel onLogin={handleLogin} />
+      {!token ? <AuthPanel onLogin={handleLogin} /> : null}
 
       <DashboardPage
         workspaces={workspaces}
