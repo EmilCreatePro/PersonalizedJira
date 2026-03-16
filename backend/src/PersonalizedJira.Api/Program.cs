@@ -90,3 +90,5 @@ app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest
 app.MapHub<UpdatesHub>("/hubs/updates");
 
 app.Run();
+
+public partial class Program;
