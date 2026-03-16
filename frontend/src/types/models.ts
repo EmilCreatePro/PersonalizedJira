@@ -23,3 +23,12 @@ export type SearchResponse = {
   query: string;
   tasks: TaskItem[];
 };
+
+export type CreateTaskInput = {
+  title: string;
+  description: string;
+  assignee: string;
+  dueDate: string;
+  label: string;
+  status: "todo" | "in-progress" | "done";
+};

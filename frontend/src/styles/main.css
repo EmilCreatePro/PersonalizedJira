@@ -116,6 +116,14 @@ input {
   font-family: inherit;
 }
 
+select {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.65rem;
+  font-family: inherit;
+  background: #fff;
+}
+
 .panel-header-row {
   display: flex;
   justify-content: space-between;
@@ -213,6 +221,22 @@ input {
 
 .task-card:active {
   cursor: grabbing;
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-actions .danger {
+  background: #b22a32;
+}
+
+.task-create-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
 }
 
 .task-card h4 {

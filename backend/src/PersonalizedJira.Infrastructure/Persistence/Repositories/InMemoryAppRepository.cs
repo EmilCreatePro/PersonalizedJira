@@ -98,4 +98,32 @@ public sealed class InMemoryAppRepository : IAppRepository
 
         return updated;
     }
+
+    public TaskDto CreateTask(Guid workspaceId, CreateTaskRequest request)
+    {
+        var created = new TaskDto(
+            Guid.NewGuid(),
+            workspaceId,
+            request.Title.Trim(),
+            request.Description.Trim(),
+            request.Assignee.Trim(),
+            request.DueDate,
+            request.Label.Trim(),
+            request.Status.Trim().ToLowerInvariant());
+
+        _tasks.Add(created);
+        return created;
+    }
+
+    public bool DeleteTask(Guid taskId)
+    {
+        var index = _tasks.FindIndex(t => t.Id == taskId);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _tasks.RemoveAt(index);
+        return true;
+    }
 }

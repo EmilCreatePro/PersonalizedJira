@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AuthPanel } from "../features/auth/components/AuthPanel";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { KanbanBoard } from "../features/boards/components/KanbanBoard";
 import { SearchPanel } from "../features/search/components/SearchPanel";
 import {
+  createTask,
+  deleteTask,
   filterTasks,
   getBoard,
   getHealth,
@@ -13,7 +15,7 @@ import {
   searchTasks
 } from "../services/api/client";
 import { connectUpdatesHub } from "../services/realtime/updatesClient";
-import type { TaskItem, Workspace } from "../types/models";
+import type { CreateTaskInput, TaskItem, Workspace } from "../types/models";
 
 export default function App() {
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -25,6 +27,14 @@ export default function App() {
   const [feed, setFeed] = useState<string[]>([]);
   const [realtimeReady, setRealtimeReady] = useState(false);
   const [pingRealtime, setPingRealtime] = useState<null | (() => Promise<void>)>(null);
+  const [createTaskForm, setCreateTaskForm] = useState<CreateTaskInput>({
+    title: "",
+    description: "",
+    assignee: "",
+    dueDate: "",
+    label: "",
+    status: "todo"
+  });
 
   useEffect(() => {
     getHealth()
@@ -99,6 +109,29 @@ export default function App() {
     setTasks((current) => current.map((item) => (item.id === updated.id ? updated : item)));
   };
 
+  const handleCreateTask = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedWorkspace) {
+      return;
+    }
+
+    const created = await createTask(selectedWorkspace.id, createTaskForm);
+    setTasks((current) => [...current, created]);
+    setCreateTaskForm({
+      title: "",
+      description: "",
+      assignee: "",
+      dueDate: "",
+      label: "",
+      status: "todo"
+    });
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    await deleteTask(taskId);
+    setTasks((current) => current.filter((task) => task.id !== taskId));
+  };
+
   return (
     <main className="app-shell">
       <header className="hero">
@@ -124,7 +157,84 @@ export default function App() {
 
       <SearchPanel onSearch={handleSearch} onFilter={handleFilter} />
 
-      <KanbanBoard tasks={visibleTasks} onMoveTask={handleMoveTask} />
+      <section className="panel">
+        <h2>Add Task</h2>
+        <p className="muted">
+          {selectedWorkspace
+            ? `Adding to workspace: ${selectedWorkspace.name}`
+            : "Select a workspace first to create a task."}
+        </p>
+        <form className="task-create-grid" onSubmit={handleCreateTask}>
+          <label>
+            Title
+            <input
+              required
+              value={createTaskForm.title}
+              onChange={(event) => setCreateTaskForm((current) => ({ ...current, title: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Description
+            <input
+              required
+              value={createTaskForm.description}
+              onChange={(event) => setCreateTaskForm((current) => ({ ...current, description: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Assignee
+            <input
+              required
+              value={createTaskForm.assignee}
+              onChange={(event) => setCreateTaskForm((current) => ({ ...current, assignee: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Due Date
+            <input
+              required
+              type="date"
+              value={createTaskForm.dueDate}
+              onChange={(event) => setCreateTaskForm((current) => ({ ...current, dueDate: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Label
+            <input
+              required
+              value={createTaskForm.label}
+              onChange={(event) => setCreateTaskForm((current) => ({ ...current, label: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            Status
+            <select
+              value={createTaskForm.status}
+              onChange={(event) =>
+                setCreateTaskForm((current) => ({
+                  ...current,
+                  status: event.target.value as CreateTaskInput["status"]
+                }))
+              }
+            >
+              <option value="todo">todo</option>
+              <option value="in-progress">in-progress</option>
+              <option value="done">done</option>
+            </select>
+          </label>
+
+          <button type="submit" disabled={!selectedWorkspace}>
+            Add Task
+          </button>
+        </form>
+      </section>
+
+      <KanbanBoard tasks={visibleTasks} onMoveTask={handleMoveTask} onDeleteTask={handleDeleteTask} />
 
       <section className="panel">
         <h2>Realtime Feed</h2>

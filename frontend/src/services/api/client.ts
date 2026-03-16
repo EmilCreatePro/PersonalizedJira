@@ -1,4 +1,4 @@
-import type { AuthResponse, SearchResponse, TaskItem, Workspace } from "../../types/models";
+import type { AuthResponse, CreateTaskInput, SearchResponse, TaskItem, Workspace } from "../../types/models";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -54,5 +54,18 @@ export function moveTask(taskId: string, status: string) {
   return apiRequest<TaskItem>(`/api/tasks/${taskId}/move`, {
     method: "POST",
     body: JSON.stringify({ status })
+  });
+}
+
+export function createTask(workspaceId: string, input: CreateTaskInput) {
+  return apiRequest<TaskItem>(`/api/boards/${workspaceId}/tasks`, {
+    method: "POST",
+    body: JSON.stringify(input)
+  });
+}
+
+export async function deleteTask(taskId: string) {
+  await apiRequest<void>(`/api/tasks/${taskId}`, {
+    method: "DELETE"
   });
 }

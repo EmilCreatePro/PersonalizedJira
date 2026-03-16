@@ -10,4 +10,6 @@ public interface IAppRepository
     IReadOnlyList<TaskDto> SearchTasks(string query);
     IReadOnlyList<TaskDto> FilterTasks(string? assignee, string? label);
     TaskDto? MoveTask(Guid taskId, string status);
+    TaskDto CreateTask(Guid workspaceId, CreateTaskRequest request);
+    bool DeleteTask(Guid taskId);
 }

@@ -64,6 +64,21 @@ app.MapGet("/api/tasks/filter", (string? assignee, string? label, IAppRepository
     return Results.Ok(tasks);
 });
 
+app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceId, CreateTaskRequest request, IAppRepository repository) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Title)
+        || string.IsNullOrWhiteSpace(request.Description)
+        || string.IsNullOrWhiteSpace(request.Assignee)
+        || string.IsNullOrWhiteSpace(request.Label)
+        || string.IsNullOrWhiteSpace(request.Status))
+    {
+        return Results.BadRequest(new { message = "Title, description, assignee, label and status are required." });
+    }
+
+    var created = repository.CreateTask(workspaceId, request);
+    return Results.Ok(created);
+});
+
 app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest request, IAppRepository repository, IHubContext<UpdatesHub> hubContext) =>
 {
     if (string.IsNullOrWhiteSpace(request.Status))
@@ -85,6 +100,17 @@ app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, MoveTaskRequest
     });
 
     return Results.Ok(updated);
+});
+
+app.MapDelete("/api/tasks/{taskId:guid}", (Guid taskId, IAppRepository repository) =>
+{
+    var deleted = repository.DeleteTask(taskId);
+    if (!deleted)
+    {
+        return Results.NotFound(new { message = "Task not found." });
+    }
+
+    return Results.NoContent();
 });
 
 app.MapHub<UpdatesHub>("/hubs/updates");

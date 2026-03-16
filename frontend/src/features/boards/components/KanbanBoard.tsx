@@ -5,11 +5,12 @@ import { TaskCard } from "../../tasks/components/TaskCard";
 type Props = {
   tasks: TaskItem[];
   onMoveTask: (task: TaskItem, targetStatus?: string) => void;
+  onDeleteTask: (taskId: string) => void;
 };
 
 const COLUMNS = ["todo", "in-progress", "done"];
 
-export function KanbanBoard({ tasks, onMoveTask }: Props) {
+export function KanbanBoard({ tasks, onMoveTask, onDeleteTask }: Props) {
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<string | null>(null);
 
@@ -65,6 +66,7 @@ export function KanbanBoard({ tasks, onMoveTask }: Props) {
                     key={task.id}
                     task={task}
                     onMoveTask={onMoveTask}
+                    onDeleteTask={onDeleteTask}
                     onDragStart={(dragged) => setDraggingTaskId(dragged.id)}
                     onDragEnd={() => {
                       setDraggingTaskId(null);
