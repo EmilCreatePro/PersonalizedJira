@@ -1,112 +1,40 @@
-# PersonalizedJira Monorepo Structure
+# PersonalizedJira
 
-This workspace is organized for a React (TypeScript) frontend and a C# .NET backend with real-time collaboration and CI/CD.
+PersonalizedJira is a full-stack interview project with:
 
-## Folder Structure
+- Frontend: React + TypeScript + Vite
+- Backend: ASP.NET Core (.NET 8, minimal APIs)
+- Realtime: SignalR (`/hubs/updates`)
+- Automated CI: GitHub Actions for backend and frontend
 
-```text
-PersonalizedJira/
-|-- .github/
-|   `-- workflows/
-|       |-- backend-ci-cd.yml
-|       `-- frontend-ci-cd.yml
-|-- .vscode/
-|-- backend/
-|   |-- src/
-|   |   |-- PersonalizedJira.Api/
-|   |   |   |-- Controllers/
-|   |   |   |-- Extensions/
-|   |   |   |-- Hubs/
-|   |   |   `-- Middleware/
-|   |   |-- PersonalizedJira.Application/
-|   |   |   |-- DTOs/
-|   |   |   |-- Features/
-|   |   |   |   |-- Auth/
-|   |   |   |   |-- Boards/
-|   |   |   |   |-- Search/
-|   |   |   |   |-- Tasks/
-|   |   |   |   `-- Workspaces/
-|   |   |   `-- Interfaces/
-|   |   |-- PersonalizedJira.Domain/
-|   |   |   |-- Entities/
-|   |   |   |-- Enums/
-|   |   |   |-- Events/
-|   |   |   `-- ValueObjects/
-|   |   `-- PersonalizedJira.Infrastructure/
-|   |       |-- Identity/
-|   |       |-- Persistence/
-|   |       |   |-- Configurations/
-|   |       |   |-- Migrations/
-|   |       |   `-- Repositories/
-|   |       |-- Realtime/
-|   |       `-- Services/
-|   `-- tests/
-|       |-- PersonalizedJira.Api.Tests/
-|       |-- PersonalizedJira.Application.Tests/
-|       `-- PersonalizedJira.Infrastructure.Tests/
-|-- docs/
-|   |-- api/
-|   `-- architecture/
-|-- frontend/
-|   |-- public/
-|   |-- src/
-|   |   |-- app/
-|   |   |-- components/
-|   |   |-- features/
-|   |   |   |-- auth/
-|   |   |   |   |-- components/
-|   |   |   |   `-- pages/
-|   |   |   |-- boards/
-|   |   |   |   `-- components/
-|   |   |   |-- dashboard/
-|   |   |   |   `-- pages/
-|   |   |   |-- search/
-|   |   |   |   `-- components/
-|   |   |   |-- tasks/
-|   |   |   |   `-- components/
-|   |   |   `-- workspaces/
-|   |   |       `-- components/
-|   |   |-- services/
-|   |   |   |-- api/
-|   |   |   `-- realtime/
-|   |   |-- store/
-|   |   |-- styles/
-|   |   |-- types/
-|   |   `-- utils/
-|   `-- tests/
-|-- infra/
-|   |-- docker/
-|   `-- k8s/
-|-- scripts/
-|   |-- backend/
-|   |-- deploy/
-|   `-- frontend/
-`-- shared/
-    `-- contracts/
-        |-- api/
-        `-- realtime/
-```
+## Tech Stack
 
-## Purpose By Layer
+- .NET 8
+- React 18
+- TypeScript 5
+- Vite
+- xUnit
 
-- `frontend/`: React UI (auth, dashboard, kanban board, task cards, filtering/search).
-- `backend/`: .NET API, application logic, domain, infrastructure, SignalR hubs for real-time events.
-- `shared/contracts/`: Shared request/response and real-time event contracts.
-- `.github/workflows/`: Frontend and backend CI/CD pipelines.
-- `infra/`: Container and cluster deployment assets.
-- `docs/`: Architecture and API documentation.
-- `scripts/`: Automation scripts for local/dev/prod flows.
+## Prerequisites
 
-## Quick Start
+- .NET SDK 8.x
+- Node.js 20+
+- npm 10+
 
-1. Start backend (Terminal 1):
+On Windows PowerShell, use `npm.cmd` if `npm` is blocked by execution policy.
+
+## Local Run
+
+From repository root, open two terminals.
+
+### Terminal 1: Backend
 
 ```powershell
 Set-Location .\backend
 dotnet run --project .\src\PersonalizedJira.Api\PersonalizedJira.Api.csproj --urls http://localhost:5000
 ```
 
-2. Start frontend (Terminal 2):
+### Terminal 2: Frontend
 
 ```powershell
 Set-Location .\frontend
@@ -114,7 +42,86 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-3. Open:
+### URLs
 
 - Frontend: http://localhost:5173
 - Backend Swagger: http://localhost:5000/swagger
+- SignalR Hub: http://localhost:5000/hubs/updates
+
+## Local Testing
+
+From repository root:
+
+### Run all tests
+
+```powershell
+dotnet test .\PersonalizedJira.sln
+```
+
+### Run infrastructure unit tests only
+
+```powershell
+dotnet test .\backend\tests\PersonalizedJira.Infrastructure.Tests\PersonalizedJira.Infrastructure.Tests.csproj
+```
+
+### Run API integration tests only
+
+```powershell
+dotnet test .\backend\tests\PersonalizedJira.Api.Tests\PersonalizedJira.Api.Tests.csproj
+```
+
+### Optional: coverage collection
+
+```powershell
+dotnet test .\PersonalizedJira.sln --collect:"XPlat Code Coverage"
+```
+
+## API Endpoints (Current Baseline)
+
+- `GET /api/health`
+- `POST /api/auth/login`
+- `GET /api/workspaces`
+- `GET /api/boards/{workspaceId}`
+- `GET /api/search?q=...`
+- `GET /api/tasks/filter?assignee=...&label=...`
+- `POST /api/tasks/{taskId}/move`
+
+## CI/CD (GitHub Actions)
+
+Workflows:
+
+- Backend: [.github/workflows/backend-ci-cd.yml](.github/workflows/backend-ci-cd.yml)
+- Frontend: [.github/workflows/frontend-ci-cd.yml](.github/workflows/frontend-ci-cd.yml)
+
+Behavior:
+
+- Backend workflow runs on push/PR to `main` when backend files or solution/workflow files change.
+- Frontend workflow runs on push/PR to `main` when frontend or frontend workflow files change.
+- Backend pipeline restores, builds, and tests the solution.
+- Frontend pipeline installs dependencies and builds the app.
+
+## Recommended Branch Protection
+
+For `main`, require status checks before merge:
+
+- `Backend CI/CD / build-test`
+- `Frontend CI/CD / build`
+
+## Interview Demo Flow (5 minutes)
+
+1. Login with any email/password.
+2. Show workspaces and board tasks.
+3. Search tasks (`/api/search`).
+4. Filter tasks by assignee/label.
+5. Move a task and mention SignalR event emission.
+6. Show tests and CI passing.
+
+## Project Structure
+
+Key folders:
+
+- `backend/src`: API, application, domain, infrastructure
+- `backend/tests`: API integration and infrastructure unit tests
+- `frontend/src`: app/features/components/services
+- `.github/workflows`: CI pipelines
+- `docs`: architecture and API notes
