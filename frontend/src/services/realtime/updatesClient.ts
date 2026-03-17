@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import type { TaskItem } from "../../types/models";
 
 const HUB_URL = "http://localhost:5000/hubs/updates";
 
@@ -8,8 +9,20 @@ export type TaskMovedEvent = {
   message: string;
 };
 
+export type TaskCreatedEvent = {
+  task: TaskItem;
+  message: string;
+};
+
+export type TaskDeletedEvent = {
+  id: string;
+  message: string;
+};
+
 type RealtimeHandlers = {
   onTaskMoved: (payload: TaskMovedEvent) => void;
+  onTaskCreated: (payload: TaskCreatedEvent) => void;
+  onTaskDeleted: (payload: TaskDeletedEvent) => void;
   onPong: (message: string) => void;
 };
 
@@ -20,6 +33,8 @@ export async function connectUpdatesHub(handlers: RealtimeHandlers) {
     .build();
 
   connection.on("taskMoved", handlers.onTaskMoved);
+  connection.on("taskCreated", handlers.onTaskCreated);
+  connection.on("taskDeleted", handlers.onTaskDeleted);
   connection.on("pong", handlers.onPong);
 
   await connection.start();

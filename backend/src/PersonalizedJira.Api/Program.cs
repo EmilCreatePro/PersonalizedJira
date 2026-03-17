@@ -118,7 +118,7 @@ RequireAuth(app.MapGet("/api/tasks/filter", (string? assignee, string? label, IA
     return Results.Ok(tasks);
 }));
 
-RequireAuth(app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceId, CreateTaskRequest request, IAppRepository repository) =>
+RequireAuth(app.MapPost("/api/boards/{workspaceId:guid}/tasks", async (Guid workspaceId, CreateTaskRequest request, IAppRepository repository, IHubContext<UpdatesHub> hubContext) =>
 {
     if (string.IsNullOrWhiteSpace(request.Title)
         || string.IsNullOrWhiteSpace(request.Description)
@@ -130,6 +130,13 @@ RequireAuth(app.MapPost("/api/boards/{workspaceId:guid}/tasks", (Guid workspaceI
     }
 
     var created = repository.CreateTask(workspaceId, request);
+
+    await hubContext.Clients.All.SendAsync("taskCreated", new
+    {
+        Task = created,
+        Message = $"Task '{created.Title}' created."
+    });
+
     return Results.Ok(created);
 }));
 
@@ -156,13 +163,19 @@ RequireAuth(app.MapPost("/api/tasks/{taskId:guid}/move", async (Guid taskId, Mov
     return Results.Ok(updated);
 }));
 
-RequireAuth(app.MapDelete("/api/tasks/{taskId:guid}", (Guid taskId, IAppRepository repository) =>
+RequireAuth(app.MapDelete("/api/tasks/{taskId:guid}", async (Guid taskId, IAppRepository repository, IHubContext<UpdatesHub> hubContext) =>
 {
     var deleted = repository.DeleteTask(taskId);
     if (!deleted)
     {
         return Results.NotFound(new { message = "Task not found." });
     }
+
+    await hubContext.Clients.All.SendAsync("taskDeleted", new
+    {
+        Id = taskId,
+        Message = "Task deleted."
+    });
 
     return Results.NoContent();
 }));

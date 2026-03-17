@@ -52,6 +52,21 @@ export default function App() {
           current.map((task) => (task.id === event.id ? { ...task, status: event.status } : task))
         );
       },
+      onTaskCreated: (event) => {
+        setFeed((current) => [event.message, ...current].slice(0, 5));
+        setTasks((current) => {
+          const existingIndex = current.findIndex((task) => task.id === event.task.id);
+          if (existingIndex >= 0) {
+            return current.map((task) => (task.id === event.task.id ? event.task : task));
+          }
+
+          return [...current, event.task];
+        });
+      },
+      onTaskDeleted: (event) => {
+        setFeed((current) => [event.message, ...current].slice(0, 5));
+        setTasks((current) => current.filter((task) => task.id !== event.id));
+      },
       onPong: (message) => {
         setFeed((current) => [message, ...current].slice(0, 5));
       }
