@@ -46,7 +46,45 @@ npm.cmd run dev
 
 - Frontend: http://localhost:5173
 - Backend Swagger: http://localhost:5000/swagger
-- SignalR Hub: http://localhost:5000/hubs/updates
+- SignalR Hub endpoint (for app clients, not direct browser viewing): http://localhost:5000/hubs/updates
+
+### SignalR Note (Important for first-time run)
+
+If you open `http://localhost:5000/hubs/updates` directly in a browser and see **"Connection ID required"**, this is expected.
+
+- The hub endpoint is not a normal web page.
+- It is used by SignalR clients (your frontend) to establish a realtime connection.
+- So this message means the endpoint exists, but it was called without the SignalR handshake.
+
+Quick check from PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post "http://localhost:5000/hubs/updates/negotiate?negotiateVersion=1"
+```
+
+If this returns JSON containing fields like `connectionId` / `availableTransports`, the hub is working.
+
+### Troubleshooting (First Run Setup Check)
+
+If realtime updates are not working yet, check these first:
+
+1. Backend is running on the expected URL:
+
+```powershell
+Invoke-RestMethod "http://localhost:5000/api/health"
+```
+
+Expected result includes `status = ok`.
+
+2. Frontend origin matches backend CORS configuration:
+
+- Frontend should run at `http://localhost:5173`.
+- Backend CORS currently allows only `http://localhost:5173`.
+
+3. Frontend is using the correct backend base URL:
+
+- API/SignalR calls should target `http://localhost:5000`.
+- If you changed ports, update frontend config accordingly.
 
 ## Local Testing
 
