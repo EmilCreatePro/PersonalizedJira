@@ -48,6 +48,9 @@ export default function App() {
     connectUpdatesHub({
       onTaskMoved: (event) => {
         setFeed((current) => [event.message, ...current].slice(0, 5));
+        setTasks((current) =>
+          current.map((task) => (task.id === event.id ? { ...task, status: event.status } : task))
+        );
       },
       onPong: (message) => {
         setFeed((current) => [message, ...current].slice(0, 5));
